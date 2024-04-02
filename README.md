@@ -1,2 +1,2 @@
 # ML_projects
-ML projects
+ML projects (PYTHON | GO)
