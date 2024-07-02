@@ -138,6 +138,7 @@ func GetIndices(s, condition series.Series, value any) []int {
 	return indices
 }
 
+// Заменить пропуски. Только для float64
 func FillNa(s series.Series, value float64, column string) series.Series {
 	newSeries := make([]float64, s.Len())
 	for i := 0; i < s.Len(); i++ {
@@ -150,6 +151,7 @@ func FillNa(s series.Series, value float64, column string) series.Series {
 	return series.New(newSeries, series.Float, column)
 }
 
+// Реализация OneHotEncoding
 func OneHotEncoding(df dataframe.DataFrame, s series.Series) dataframe.DataFrame {
 
 	uniqueValues := GetUniqueValues(s)
@@ -171,6 +173,7 @@ func OneHotEncoding(df dataframe.DataFrame, s series.Series) dataframe.DataFrame
 	return df
 }
 
+// Получить колонки по типу
 func GetNameColumnsByType(df dataframe.DataFrame, typeColumn string) []string {
 
 	var nameColumns []string
