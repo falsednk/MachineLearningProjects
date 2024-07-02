@@ -1,4 +1,4 @@
-module example/test
+module https://github.com/falsednk/MachineLearningProjects/tree/426585861f09410bdb0e3d5af2a26243ac8fed1d/PrecipitationPrediction
 
 go 1.22.1
 
