@@ -5,6 +5,9 @@ import (
 	"log"
 	"os"
 	"time"
+	"math"
+        "stat"
+	"sort"
 
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
@@ -173,6 +176,26 @@ func OneHotEncoding(df dataframe.DataFrame, s series.Series) dataframe.DataFrame
 	return df
 }
 
+// Реализация LabelEncoding
+func LabelEncoding (df dataframe.DataFrame, col string) (dataframe.DataFrame, map[string]int) {
+    s := df.Col(col)
+    uniqueValue := GetUniqueValues(s)
+    labelMap := make(map[string]int)
+    for ind, label := range uniqueValue {
+        labelMap[label.(string)] = ind
+        ind++
+    }
+    var labelValues []int
+    for i := 0; i < s.Len(); i++ {
+        elem := s.Elem(i).String()
+        labelValues = append(labelValues, labelMap[elem])
+    }
+    nameColumns := fmt.Sprintf("Label_%s", col)
+    fmt.Println(nameColumns)
+    df = df.Mutate(series.New(labelValues, series.Int, nameColumns))
+    return df, labelMap
+}     
+
 // Получить колонки по типу
 func GetNameColumnsByType(df dataframe.DataFrame, typeColumn string) []string {
 
@@ -183,4 +206,62 @@ func GetNameColumnsByType(df dataframe.DataFrame, typeColumn string) []string {
 		}
 	}
 	return nameColumns
+}
+
+//Получить заданный квантиль
+func GetQuantileValue(s series.Series, p float64) float64 {
+    var QuantileValue []float64
+    if s.Type() == "string" || s.Len() == 0 {
+		return math.NaN()
+	}
+    switch s.Type() {
+        case "float":
+            for i := 0; i < s.Len(); i++ {
+                if !s.Elem(i).IsNA() {
+                    elem := s.Elem(i).Float()
+                    QuantileValue = append(QuantileValue, elem)
+                }
+            }
+        case "int":
+            for i := 0; i < s.Len(); i++ {
+                if !s.Elem(i).IsNA() {
+                    elem, _ := s.Elem(i).Int()
+                    QuantileValue = append(QuantileValue, float64(elem))
+                }
+            }
+        }
+    sort.Slice(QuantileValue, func(i, j int) bool {
+      return QuantileValue[i]< QuantileValue[j] 
+    })
+    return stat.Quantile(p, stat.Empirical, QuantileValue, nil)
+}
+
+//Получить среднее значение
+func GetMeanValue(s series.Series) float64 {
+
+    if s.Type() == "string" || s.Len() == 0 {
+		return math.NaN()
+	}
+    var meanValue, sum float64
+    var i int
+    
+    switch s.Type() {
+        case "float":
+            for ; i < s.Len(); i++ {
+                if !s.Elem(i).IsNA() {
+                    elem := s.Elem(i).Float()
+                    sum += elem  
+                }
+            }
+            meanValue = sum/float64(i)
+        case "int":
+            for ; i < s.Len(); i++ {
+                if !s.Elem(i).IsNA() {
+                    elem, _ := s.Elem(i).Int()
+                    sum += float64(elem)     
+                }
+            }
+            meanValue = sum/float64(i)
+        }
+    return meanValue
 }
