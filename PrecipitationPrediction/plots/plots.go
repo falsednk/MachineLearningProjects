@@ -198,3 +198,112 @@ func Show2ColsBoxPlot(s1, s2 series.Series, t1, t2, significative string) {
 	writerTo.WriteTo(buf)
 	gonbui.DisplayPNG(buf.Bytes())
 }
+
+func isColumnEmpty(dataset [][]float64, col int) bool {
+	for _, row := range dataset {
+		if !math.IsNaN(row[col]) {
+			return false
+		}
+	}
+	return true
+}  
+
+type plottable struct {
+	grid [][]float64
+	N int
+	M int
+	resolution float64
+	minX float64
+	minY float64
+  }
+
+func (p plottable) Dims() (c, r int) {
+	return p.N, p.M
+}
+func (p plottable) X(c int) float64 {
+	return p.minX + float64(c)*p.resolution
+}
+func (p plottable) Y(r int) float64 {
+	return p.minY + float64(r)*p.resolution
+}
+func (p plottable) Z(c, r int) float64 {
+	return p.grid[c][r]
+}
+
+func ShowHeatMap (df dataframe.DataFrame, col1, col2, col3 string) {
+
+    axisY := df.Col(col1)
+    axisX := df.Col(col2)
+    values := df.Col(col3)
+    
+    resultMap := make(map[int]map[int]float64)
+    for i := 0; i < values.Len(); i++ {
+        keyY, _ := axisY.Elem(i).Int()
+        keyX, _ := axisX.Elem(i).Int()
+        if _, ok := resultMap[keyY]; !ok {
+            resultMap[keyY] = make(map[int]float64)
+        }
+       resultMap[keyY][keyX] = values.Elem(i).Float()
+      }
+    lenghtX := len(GetUniqueValues(axisX))
+    lenghtY := len(GetUniqueValues(axisY))
+
+    dataset := make([][]float64, lenghtX)
+    for i := range dataset {
+    	dataset[i] = make([]float64, lenghtY) 
+    	for j := range dataset[i] {
+    		dataset[i][j] = math.NaN()
+    	}
+    }
+
+    for aY, data := range resultMap {
+        j := aY - int(axisY.Min())
+    	for aX, value := range data {
+    		dataset[aX-1][j] = value 
+    	}
+    }
+    nonEmptyColumns := make([]int, 0)
+    for j := 0; j < lenghtY; j++ {
+    	if !isColumnEmpty(dataset, j) {
+    		nonEmptyColumns = append(nonEmptyColumns, j)
+    	}
+    }
+    newDataset := make([][]float64, len(dataset))
+    for i := range newDataset {
+    	newDataset[i] = make([]float64, len(nonEmptyColumns))
+    	for j, col := range nonEmptyColumns {
+    		newDataset[i][j] = dataset[i][col]
+    	}
+    }
+    dataset = newDataset
+
+    plotData := plottable{
+    	grid: dataset,
+    	N: len(dataset),
+    	M: len(dataset[0]),
+    	minX: 0,
+    	minY: axisY.Min()-0.5,
+    	resolution: 1,
+    	}
+    pal := moreland.SmoothBlueRed().Palette(255)
+    hm := plotter.NewHeatMap(plotData, pal)
+
+    p := plot.New()
+    nameTitle := fmt.Sprintf("Heatmap of the indicator %s by %s and %s", col3, col1, col2)
+    nameX := fmt.Sprintf("Values %s", col2)
+    nameY := fmt.Sprintf("Values %s", col1)
+    p.Title.Text = nameTitle
+    p.X.Label.Text = nameX
+    p.Y.Label.Text = nameY
+    //p.NominalY(labels...)
+
+    p.Add(hm)
+
+    buf := bytes.NewBuffer(nil)
+    writerTo, err := p.WriterTo(vg.Length(800), vg.Length(600), "png")
+    if err != nil {
+    	panic(err)
+    }
+    writerTo.WriteTo(buf)
+    gonbui.DisplayPNG(buf.Bytes())
+}
