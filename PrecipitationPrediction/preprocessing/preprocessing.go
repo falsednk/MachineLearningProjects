@@ -84,35 +84,38 @@ func GetInfoDf(df dataframe.DataFrame) {
 }
 
 // Получить часть даты
-func GetPartDate(s series.Series, part string) series.Series {
-	dateLayout := "2006-01-02"
-	datePart := make([]int, s.Len())
-	for i := 0; i < s.Len(); i++ {
-		date, err := time.Parse(dateLayout, s.Elem(i).String())
-		year, week := date.ISOWeek()
-		if err != nil {
-			datePart[i] = 0
-		}
-		if part == "Year" {
-			datePart[i] = year
-		} else if part == "Month" {
-			datePart[i] = int(date.Month())
-		} else if part == "Day" {
-			datePart[i] = int(date.Day())
-		} else {
-			datePart[i] = week
-		}
-	}
-	return series.New(datePart, series.Int, part)
+func getPartDate(s series.Series, part string) series.Series {
+    dateLayout := "2006-01-02" 
+    datePart := make([]int, s.Len())
+    for i := 0; i < s.Len(); i++ {
+        date, err := time.Parse(dateLayout, s.Elem(i).String())
+        year, week := date.ISOWeek()
+        if err != nil {
+            datePart[i] =  0
+        }
+        if part=="Year" {
+            datePart[i] = year
+        } else if part=="Month" {
+            datePart[i] = int(date.Month())
+        } else if part=="Day" {
+            datePart[i] = int(date.Day())
+        } else if part=="YearDay" {
+            datePart[i] = int(date.YearDay())
+        } else {
+            datePart[i] = week 
+        }
+    }
+    return series.New(datePart, series.Int, part)
 }
 
 // Добавить расширенные данные по дате
 func DateApply(df dataframe.DataFrame) dataframe.DataFrame {
-	df = df.Mutate(GetPartDate(df.Col("Date"), "Year"))
-	df = df.Mutate(GetPartDate(df.Col("Date"), "Month"))
-	df = df.Mutate(GetPartDate(df.Col("Date"), "Week"))
-	df = df.Mutate(GetPartDate(df.Col("Date"), "Day"))
-	return df
+    df = df.Mutate(getPartDate(df.Col("Date"), "Year"))
+    df = df.Mutate(getPartDate(df.Col("Date"), "Month"))
+    df = df.Mutate(getPartDate(df.Col("Date"), "Week"))
+    df = df.Mutate(getPartDate(df.Col("Date"), "YearDay"))
+    df = df.Mutate(getPartDate(df.Col("Date"), "Day"))
+    return df
 }
 
 // Получить индексы пропусков по условию, заданному другой колонкой
