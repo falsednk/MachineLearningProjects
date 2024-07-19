@@ -1,5 +1,6 @@
 
-![image](https://github.com/falsednk/MachineLearningProjects/assets/87853781/b6a9e85e-b1a3-4de6-ab29-56896c4e8167)
+![image](https://github.com/user-attachments/assets/ff0196fc-c7f5-4173-82ed-cbc3122dc7c7)
+
 
 К сожалению к Golang написано мало библиотек, позволяющих работать с данными. Поэтому на базе некоторых из них были созданы пользовательские функции, позволяющие проводить анализ и обработку данных, а именно:
 
